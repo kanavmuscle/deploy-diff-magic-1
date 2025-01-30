@@ -17,7 +17,9 @@ export const OrgSelector = ({ type, onConnect }: OrgSelectorProps) => {
       const clientId = type === "source" 
         ? "3MVG96MLzwkgoRznGPRExh_X5wx1bF7I7E8umgNxCoRvkksti.ivQTsLieZg9ekfSl7c5pPSfrP5SGgPsJ6TR"
         : "3MVG96MLzwkgoRzmQaEDPjvHCWAJXHUTiZR91dLUuHQyooEFejSLWz8LtrIrLGFeJfevyrF0Gfeeb7Bk8_6gw";
-      const redirectUri = encodeURIComponent(window.location.origin + "/oauth/callback");
+      
+      // Use the exact callback URL as configured in Salesforce
+      const redirectUri = encodeURIComponent("https://test.salesforce.com/services/oauth2/callback");
       
       // Use test.salesforce.com for both orgs since they are sandboxes
       const loginUrl = "https://test.salesforce.com/services/oauth2/authorize";
