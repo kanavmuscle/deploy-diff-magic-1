@@ -14,7 +14,9 @@ export const OrgSelector = ({ type, onConnect }: OrgSelectorProps) => {
     setIsLoading(true);
     try {
       // Initialize OAuth flow
-      const clientId = "YOUR_SALESFORCE_CLIENT_ID"; // This should come from environment variables
+      const clientId = type === "source" 
+        ? "3MVG96MLzwkgoRznGPRExh_X5wx1bF7I7E8umgNxCoRvkksti.ivQTsLieZg9ekfSl7c5pPSfrP5SGgPsJ6TR"
+        : "YOUR_SALESFORCE_CLIENT_ID"; // Target org client ID still needed
       const redirectUri = encodeURIComponent(window.location.origin + "/oauth/callback");
       const loginUrl = type === "source" 
         ? "https://login.salesforce.com/services/oauth2/authorize"
