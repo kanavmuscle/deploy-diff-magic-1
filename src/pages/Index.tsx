@@ -6,8 +6,8 @@ import { DeploymentPanel } from "@/components/DeploymentPanel";
 import { useToast } from "@/components/ui/use-toast";
 
 const Index = () => {
-  const [sourceOrg, setSourceOrg] = useState<{ url: string; token: string } | null>(null);
-  const [targetOrg, setTargetOrg] = useState<{ url: string; token: string } | null>(null);
+  const [sourceOrg, setSourceOrg] = useState<{ url: string; instanceUrl: string } | null>(null);
+  const [targetOrg, setTargetOrg] = useState<{ url: string; instanceUrl: string } | null>(null);
   const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
   const [differences, setDifferences] = useState<any[]>([]);
   const [isDeploying, setIsDeploying] = useState(false);
