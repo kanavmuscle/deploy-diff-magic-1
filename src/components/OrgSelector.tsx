@@ -16,11 +16,11 @@ export const OrgSelector = ({ type, onConnect }: OrgSelectorProps) => {
       // Initialize OAuth flow
       const clientId = type === "source" 
         ? "3MVG96MLzwkgoRznGPRExh_X5wx1bF7I7E8umgNxCoRvkksti.ivQTsLieZg9ekfSl7c5pPSfrP5SGgPsJ6TR"
-        : "YOUR_SALESFORCE_CLIENT_ID"; // Target org client ID still needed
+        : "3MVG96MLzwkgoRzmQaEDPjvHCWAJXHUTiZR91dLUuHQyooEFejSLWz8LtrIrLGFeJfevyrF0Gfeeb7Bk8_6gw";
       const redirectUri = encodeURIComponent(window.location.origin + "/oauth/callback");
-      const loginUrl = type === "source" 
-        ? "https://login.salesforce.com/services/oauth2/authorize"
-        : "https://test.salesforce.com/services/oauth2/authorize";
+      
+      // Use test.salesforce.com for both orgs since they are sandboxes
+      const loginUrl = "https://test.salesforce.com/services/oauth2/authorize";
       
       const url = `${loginUrl}?response_type=token&client_id=${clientId}&redirect_uri=${redirectUri}&scope=api%20refresh_token`;
       
