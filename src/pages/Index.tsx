@@ -7,8 +7,6 @@ import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { ArrowLeftRight } from "lucide-react";
 
-const METADATA_TYPES = ["CustomField", "CustomObject", "ApexClass"];
-
 const Index = () => {
   const [sourceOrg, setSourceOrg] = useState<{ url: string; instanceUrl: string } | null>(null);
   const [targetOrg, setTargetOrg] = useState<{ url: string; instanceUrl: string } | null>(null);
