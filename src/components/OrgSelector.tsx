@@ -1,6 +1,6 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 interface OrgSelectorProps {
   type: "source" | "target";
@@ -10,6 +10,22 @@ interface OrgSelectorProps {
 export const OrgSelector = ({ type, onConnect }: OrgSelectorProps) => {
   const [isLoading, setIsLoading] = useState(false);
 
+  useEffect(() => {
+    // Handle OAuth response when the page loads
+    const hash = window.location.hash;
+    if (hash) {
+      const params = new URLSearchParams(hash.substring(1));
+      const accessToken = params.get("access_token");
+      const instanceUrl = params.get("instance_url");
+      
+      if (accessToken && instanceUrl) {
+        onConnect({ url: accessToken, instanceUrl });
+        // Clear the hash without redirecting
+        window.history.pushState("", document.title, window.location.pathname + window.location.search);
+      }
+    }
+  }, [onConnect]);
+
   const handleLogin = async () => {
     setIsLoading(true);
     try {
@@ -18,13 +34,8 @@ export const OrgSelector = ({ type, onConnect }: OrgSelectorProps) => {
         ? "3MVG96MLzwkgoRznGPRExh_X5wx1bF7I7E8umgNxCoRvkksti.ivQTsLieZg9ekfSl7c5pPSfrP5SGgPsJ6TR"
         : "3MVG96MLzwkgoRzmQaEDPjvHCWAJXHUTiZR91dLUuHQyooEFejSLWz8LtrIrLGFeJfevyrF0Gfeeb7Bk8_6gw";
       
-      // Use the exact callback URL as configured in Salesforce
       const redirectUri = encodeURIComponent("https://test.salesforce.com/services/oauth2/callback");
-      
-      // Use test.salesforce.com for both orgs since they are sandboxes
       const loginUrl = "https://test.salesforce.com/services/oauth2/authorize";
-      
-      // Removed scope parameter from the URL
       const url = `${loginUrl}?response_type=token&client_id=${clientId}&redirect_uri=${redirectUri}`;
       
       // Open Salesforce login window
