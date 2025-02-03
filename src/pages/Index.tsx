@@ -3,7 +3,7 @@ import { OrgSelector } from "@/components/OrgSelector";
 import { MetadataFilter } from "@/components/MetadataFilter";
 import { DiffViewer } from "@/components/DiffViewer";
 import { DeploymentPanel } from "@/components/DeploymentPanel";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { ArrowLeftRight } from "lucide-react";
 
@@ -103,37 +103,33 @@ const Index = () => {
           />
         </div>
 
-        {sourceOrg && targetOrg && (
-          <div className="flex justify-center mb-8">
-            <Button
-              onClick={handleCompare}
-              disabled={isComparing}
-              className="bg-primary hover:bg-primary/90 transition-colors"
-            >
-              <ArrowLeftRight className="mr-2 h-4 w-4" />
-              {isComparing ? "Comparing..." : "Compare Metadata"}
-            </Button>
-          </div>
-        )}
+        <div className="flex justify-center mb-8">
+          <Button
+            onClick={handleCompare}
+            disabled={isComparing}
+            className="bg-primary hover:bg-primary/90 transition-colors"
+          >
+            <ArrowLeftRight className="mr-2 h-4 w-4" />
+            {isComparing ? "Comparing..." : "Compare Metadata"}
+          </Button>
+        </div>
 
-        {sourceOrg && targetOrg && (
-          <div className="grid grid-cols-12 gap-8">
-            <div className="col-span-3">
-              <MetadataFilter
-                selectedTypes={selectedTypes}
-                onTypeSelect={handleTypeSelect}
-              />
-            </div>
-            <div className="col-span-9 space-y-8">
-              <DiffViewer differences={differences} />
-              <DeploymentPanel
-                selectedItems={selectedTypes}
-                onDeploy={handleDeploy}
-                isDeploying={isDeploying}
-              />
-            </div>
+        <div className="grid grid-cols-12 gap-8">
+          <div className="col-span-3">
+            <MetadataFilter
+              selectedTypes={selectedTypes}
+              onTypeSelect={handleTypeSelect}
+            />
           </div>
-        )}
+          <div className="col-span-9 space-y-8">
+            <DiffViewer differences={differences} />
+            <DeploymentPanel
+              selectedItems={selectedTypes}
+              onDeploy={handleDeploy}
+              isDeploying={isDeploying}
+            />
+          </div>
+        </div>
       </div>
     </div>
   );
