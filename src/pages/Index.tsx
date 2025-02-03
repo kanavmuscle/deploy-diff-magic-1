@@ -5,7 +5,7 @@ import { DiffViewer } from "@/components/DiffViewer";
 import { DeploymentPanel } from "@/components/DeploymentPanel";
 import { useToast } from "@/components/ui/use-toast";
 import { Button } from "@/components/ui/button";
-import { Compare } from "lucide-react";
+import { ArrowLeftRight } from "lucide-react";
 
 const METADATA_TYPES = ["CustomField", "CustomObject", "ApexClass"];
 
@@ -110,7 +110,7 @@ const Index = () => {
               disabled={isComparing}
               className="bg-primary hover:bg-primary/90 transition-colors"
             >
-              <Compare className="mr-2 h-4 w-4" />
+              <ArrowLeftRight className="mr-2 h-4 w-4" />
               {isComparing ? "Comparing..." : "Compare Metadata"}
             </Button>
           </div>
