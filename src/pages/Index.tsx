@@ -43,12 +43,16 @@ const Index = () => {
       const response = await fetch(`${org.instanceUrl}/services/data/v57.0/tooling/query?q=SELECT+Id,Name,Body+FROM+${type}`, {
         headers: {
           'Authorization': `Bearer ${org.url}`,
-          'Content-Type': 'application/json'
-        }
+          'Content-Type': 'application/json',
+          'X-Prettyprint': '1'
+        },
+        mode: 'cors',
+        credentials: 'include'
       });
 
       if (!response.ok) {
-        console.error(`Error response from Salesforce:`, await response.text());
+        const errorText = await response.text();
+        console.error(`Error response from Salesforce:`, errorText);
         throw new Error(`Failed to fetch ${type} metadata: ${response.status} ${response.statusText}`);
       }
 
