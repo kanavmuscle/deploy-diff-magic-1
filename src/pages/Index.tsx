@@ -47,6 +47,18 @@ const Index = () => {
     }, 2000);
   };
 
+  const handleSourceDisconnect = () => {
+    setSourceOrg(null);
+    setSelectedTypes([]);
+    setDifferences([]);
+  };
+
+  const handleTargetDisconnect = () => {
+    setTargetOrg(null);
+    setSelectedTypes([]);
+    setDifferences([]);
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-accent to-muted p-8">
       <div className="max-w-7xl mx-auto space-y-8">
@@ -55,8 +67,16 @@ const Index = () => {
         </h1>
         
         <div className="grid grid-cols-2 gap-8 mb-8">
-          <OrgSelector type="source" onConnect={setSourceOrg} />
-          <OrgSelector type="target" onConnect={setTargetOrg} />
+          <OrgSelector 
+            type="source" 
+            onConnect={setSourceOrg} 
+            onDisconnect={handleSourceDisconnect}
+          />
+          <OrgSelector 
+            type="target" 
+            onConnect={setTargetOrg} 
+            onDisconnect={handleTargetDisconnect}
+          />
         </div>
 
         {sourceOrg && targetOrg && (

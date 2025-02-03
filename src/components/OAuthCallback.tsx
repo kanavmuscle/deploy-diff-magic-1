@@ -12,17 +12,20 @@ const OAuthCallback = () => {
       const params = new URLSearchParams(hash.substring(1));
       const accessToken = params.get("access_token");
       const instanceUrl = params.get("instance_url");
+      const state = params.get("state");
       
-      if (accessToken && instanceUrl) {
-        // Store OAuth response in sessionStorage
-        sessionStorage.setItem("oauth_response", JSON.stringify({
+      if (accessToken && instanceUrl && state) {
+        const { type } = JSON.parse(decodeURIComponent(state));
+        
+        // Store OAuth response in sessionStorage with org-specific key
+        sessionStorage.setItem(`oauth_response_${type}`, JSON.stringify({
           accessToken,
           instanceUrl,
         }));
         
         toast({
           title: "Successfully connected to Salesforce",
-          description: "You can now proceed with the deployment process.",
+          description: `Your ${type} org has been connected successfully.`,
         });
 
         // Redirect back to main page
