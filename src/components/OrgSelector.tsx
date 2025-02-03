@@ -1,6 +1,7 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
+import { CheckCircle2 } from "lucide-react";
 
 interface OrgSelectorProps {
   type: "source" | "target";
@@ -9,6 +10,8 @@ interface OrgSelectorProps {
 
 export const OrgSelector = ({ type, onConnect }: OrgSelectorProps) => {
   const [isLoading, setIsLoading] = useState(false);
+  const [isConnected, setIsConnected] = useState(false);
+  const [orgUrl, setOrgUrl] = useState<string>("");
 
   useEffect(() => {
     // Check for stored OAuth response
@@ -16,6 +19,8 @@ export const OrgSelector = ({ type, onConnect }: OrgSelectorProps) => {
     if (storedResponse) {
       const { accessToken, instanceUrl } = JSON.parse(storedResponse);
       onConnect({ url: accessToken, instanceUrl });
+      setIsConnected(true);
+      setOrgUrl(instanceUrl);
       // Clear the stored response
       sessionStorage.removeItem("oauth_response");
     }
@@ -50,13 +55,20 @@ export const OrgSelector = ({ type, onConnect }: OrgSelectorProps) => {
         <p className="text-sm text-secondary/80">
           Connect to your {type === "source" ? "source" : "target"} Salesforce organization
         </p>
-        <Button
-          onClick={handleLogin}
-          disabled={isLoading}
-          className="w-full bg-primary hover:bg-primary/90 transition-colors"
-        >
-          {isLoading ? "Connecting..." : `Login to ${type === "source" ? "Source" : "Target"} Org`}
-        </Button>
+        {isConnected ? (
+          <div className="flex items-center space-x-2 text-green-600">
+            <CheckCircle2 className="w-5 h-5" />
+            <span className="text-sm">Successfully connected to {orgUrl}</span>
+          </div>
+        ) : (
+          <Button
+            onClick={handleLogin}
+            disabled={isLoading}
+            className="w-full bg-primary hover:bg-primary/90 transition-colors"
+          >
+            {isLoading ? "Connecting..." : `Login to ${type === "source" ? "Source" : "Target"} Org`}
+          </Button>
+        )}
       </div>
     </Card>
   );
