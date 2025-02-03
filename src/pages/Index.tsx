@@ -38,6 +38,7 @@ const Index = () => {
   };
 
   const fetchMetadata = async (org: { url: string; instanceUrl: string }, type: string) => {
+    console.log(`Fetching metadata for type ${type} from org ${org.instanceUrl}`);
     try {
       const response = await fetch(`${org.instanceUrl}/services/data/v57.0/tooling/query?q=SELECT+Id,Name,Body+FROM+${type}`, {
         headers: {
@@ -47,10 +48,12 @@ const Index = () => {
       });
 
       if (!response.ok) {
-        throw new Error(`Failed to fetch ${type} metadata`);
+        console.error(`Error response from Salesforce:`, await response.text());
+        throw new Error(`Failed to fetch ${type} metadata: ${response.status} ${response.statusText}`);
       }
 
       const data = await response.json();
+      console.log(`Received metadata for ${type}:`, data);
       return data.records;
     } catch (error) {
       console.error(`Error fetching ${type} metadata:`, error);
@@ -59,68 +62,76 @@ const Index = () => {
   };
 
   const compareMetadata = (sourceItems: any[], targetItems: any[]) => {
+    console.log('Comparing metadata items:', { sourceItems, targetItems });
     const differences = [];
 
-    for (const sourceItem of sourceItems) {
-      const targetItem = targetItems.find(item => item.Name === sourceItem.Name);
+    try {
+      for (const sourceItem of sourceItems) {
+        const targetItem = targetItems.find(item => item.Name === sourceItem.Name);
 
-      if (!targetItem) {
-        // Item exists in source but not in target
-        differences.push({
-          type: sourceItem.attributes.type,
-          name: sourceItem.Name,
-          changes: [{
-            line: 1,
-            source: sourceItem.Body || 'Present in source',
-            target: 'Not present in target'
-          }]
-        });
-        continue;
-      }
+        if (!targetItem) {
+          console.log(`Item ${sourceItem.Name} exists in source but not in target`);
+          differences.push({
+            type: sourceItem.attributes?.type || 'Unknown',
+            name: sourceItem.Name,
+            changes: [{
+              line: 1,
+              source: sourceItem.Body || 'Present in source',
+              target: 'Not present in target'
+            }]
+          });
+          continue;
+        }
 
-      if (sourceItem.Body !== targetItem.Body) {
-        // Item exists in both but has differences
-        const sourceLines = (sourceItem.Body || '').split('\n');
-        const targetLines = (targetItem.Body || '').split('\n');
-        const changes = [];
+        if (sourceItem.Body !== targetItem.Body) {
+          console.log(`Found differences in ${sourceItem.Name}`);
+          const sourceLines = (sourceItem.Body || '').split('\n');
+          const targetLines = (targetItem.Body || '').split('\n');
+          const changes = [];
 
-        for (let i = 0; i < Math.max(sourceLines.length, targetLines.length); i++) {
-          if (sourceLines[i] !== targetLines[i]) {
-            changes.push({
-              line: i + 1,
-              source: sourceLines[i] || '(empty)',
-              target: targetLines[i] || '(empty)'
+          for (let i = 0; i < Math.max(sourceLines.length, targetLines.length); i++) {
+            if (sourceLines[i] !== targetLines[i]) {
+              changes.push({
+                line: i + 1,
+                source: sourceLines[i] || '(empty)',
+                target: targetLines[i] || '(empty)'
+              });
+            }
+          }
+
+          if (changes.length > 0) {
+            differences.push({
+              type: sourceItem.attributes?.type || 'Unknown',
+              name: sourceItem.Name,
+              changes
             });
           }
         }
+      }
 
-        if (changes.length > 0) {
+      // Check for items that exist only in target
+      for (const targetItem of targetItems) {
+        const sourceItem = sourceItems.find(item => item.Name === targetItem.Name);
+        if (!sourceItem) {
+          console.log(`Item ${targetItem.Name} exists in target but not in source`);
           differences.push({
-            type: sourceItem.attributes.type,
-            name: sourceItem.Name,
-            changes
+            type: targetItem.attributes?.type || 'Unknown',
+            name: targetItem.Name,
+            changes: [{
+              line: 1,
+              source: 'Not present in source',
+              target: targetItem.Body || 'Present in target'
+            }]
           });
         }
       }
-    }
 
-    // Check for items that exist only in target
-    for (const targetItem of targetItems) {
-      const sourceItem = sourceItems.find(item => item.Name === targetItem.Name);
-      if (!sourceItem) {
-        differences.push({
-          type: targetItem.attributes.type,
-          name: targetItem.Name,
-          changes: [{
-            line: 1,
-            source: 'Not present in source',
-            target: targetItem.Body || 'Present in target'
-          }]
-        });
-      }
+      console.log('Comparison complete. Found differences:', differences);
+      return differences;
+    } catch (error) {
+      console.error('Error during comparison:', error);
+      throw error;
     }
-
-    return differences;
   };
 
   const handleCompare = async () => {
@@ -146,9 +157,11 @@ const Index = () => {
     setDifferences([]);
 
     try {
+      console.log('Starting comparison for types:', selectedTypes);
       const allDifferences = [];
 
       for (const type of selectedTypes) {
+        console.log(`Processing metadata type: ${type}`);
         const sourceItems = await fetchMetadata(sourceOrg, type);
         const targetItems = await fetchMetadata(targetOrg, type);
         const typeDifferences = compareMetadata(sourceItems, targetItems);
@@ -166,7 +179,7 @@ const Index = () => {
       toast({
         variant: "destructive",
         title: "Comparison Failed",
-        description: "An error occurred while comparing metadata. Please try again.",
+        description: error instanceof Error ? error.message : "An error occurred while comparing metadata.",
       });
     } finally {
       setIsComparing(false);
