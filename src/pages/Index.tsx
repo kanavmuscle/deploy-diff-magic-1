@@ -46,8 +46,7 @@ const Index = () => {
           'Content-Type': 'application/json',
           'X-Prettyprint': '1'
         },
-        mode: 'cors',
-        credentials: 'include'
+        mode: 'cors'
       });
 
       if (!response.ok) {
