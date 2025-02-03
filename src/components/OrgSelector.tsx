@@ -48,7 +48,7 @@ export const OrgSelector = ({ type, onConnect, onDisconnect }: OrgSelectorProps)
         ? "3MVG96MLzwkgoRznGPRExh_X5wx1bF7I7E8umgNxCoRvkksti.ivQTsLieZg9ekfSl7c5pPSfrP5SGgPsJ6TR"
         : "3MVG96MLzwkgoRzmQaEDPjvHCWAJXHUTiZR91dLUuHQyooEFejSLWz8LtrIrLGFeJfevyrF0Gfeeb7Bk8_6gw";
       
-      const redirectUri = encodeURIComponent(`${window.location.origin}/oauth/callback`);
+      const redirectUri = encodeURIComponent('https://preview--deploy-diff-magic-1.lovable.app/oauth/callback');
       const loginUrl = "https://test.salesforce.com/services/oauth2/authorize";
       const state = encodeURIComponent(JSON.stringify({ type }));
       const url = `${loginUrl}?response_type=token&client_id=${clientId}&redirect_uri=${redirectUri}&state=${state}`;
