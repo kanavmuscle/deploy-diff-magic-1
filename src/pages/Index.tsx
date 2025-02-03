@@ -4,6 +4,10 @@ import { MetadataFilter } from "@/components/MetadataFilter";
 import { DiffViewer } from "@/components/DiffViewer";
 import { DeploymentPanel } from "@/components/DeploymentPanel";
 import { useToast } from "@/components/ui/use-toast";
+import { Button } from "@/components/ui/button";
+import { Compare } from "lucide-react";
+
+const METADATA_TYPES = ["CustomField", "CustomObject", "ApexClass"];
 
 const Index = () => {
   const [sourceOrg, setSourceOrg] = useState<{ url: string; instanceUrl: string } | null>(null);
@@ -11,6 +15,7 @@ const Index = () => {
   const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
   const [differences, setDifferences] = useState<any[]>([]);
   const [isDeploying, setIsDeploying] = useState(false);
+  const [isComparing, setIsComparing] = useState(false);
   const { toast } = useToast();
 
   const handleTypeSelect = (type: string) => {
@@ -18,10 +23,25 @@ const Index = () => {
       setSelectedTypes(selectedTypes.filter((t) => t !== type));
     } else {
       setSelectedTypes([...selectedTypes, type]);
-      // Simulate fetching differences
+    }
+  };
+
+  const handleCompare = async () => {
+    if (!sourceOrg || !targetOrg) {
+      toast({
+        variant: "destructive",
+        title: "Cannot compare",
+        description: "Both source and target orgs must be connected.",
+      });
+      return;
+    }
+
+    setIsComparing(true);
+    // Simulate comparison for now
+    setTimeout(() => {
       setDifferences([
         {
-          type,
+          type: "ApexClass",
           name: "SampleClass",
           changes: [
             {
@@ -32,12 +52,16 @@ const Index = () => {
           ],
         },
       ]);
-    }
+      setIsComparing(false);
+      toast({
+        title: "Comparison Complete",
+        description: "Metadata differences have been loaded.",
+      });
+    }, 2000);
   };
 
   const handleDeploy = () => {
     setIsDeploying(true);
-    // Simulate deployment
     setTimeout(() => {
       setIsDeploying(false);
       toast({
@@ -78,6 +102,19 @@ const Index = () => {
             onDisconnect={handleTargetDisconnect}
           />
         </div>
+
+        {sourceOrg && targetOrg && (
+          <div className="flex justify-center mb-8">
+            <Button
+              onClick={handleCompare}
+              disabled={isComparing}
+              className="bg-primary hover:bg-primary/90 transition-colors"
+            >
+              <Compare className="mr-2 h-4 w-4" />
+              {isComparing ? "Comparing..." : "Compare Metadata"}
+            </Button>
+          </div>
+        )}
 
         {sourceOrg && targetOrg && (
           <div className="grid grid-cols-12 gap-8">

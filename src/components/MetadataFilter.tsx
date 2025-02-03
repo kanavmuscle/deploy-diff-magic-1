@@ -2,14 +2,7 @@ import { Card } from "@/components/ui/card";
 import { Check, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 
-const METADATA_TYPES = [
-  "ApexClass",
-  "ApexTrigger",
-  "CustomObject",
-  "Layout",
-  "Profile",
-  "PermissionSet",
-];
+const METADATA_TYPES = ["CustomField", "CustomObject", "ApexClass"];
 
 interface MetadataFilterProps {
   selectedTypes: string[];
