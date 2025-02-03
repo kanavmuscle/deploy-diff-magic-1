@@ -24,7 +24,8 @@ export const OrgSelector = ({ type, onConnect }: OrgSelectorProps) => {
       // Use test.salesforce.com for both orgs since they are sandboxes
       const loginUrl = "https://test.salesforce.com/services/oauth2/authorize";
       
-      const url = `${loginUrl}?response_type=token&client_id=${clientId}&redirect_uri=${redirectUri}&scope=api%20refresh_token`;
+      // Removed scope parameter from the URL
+      const url = `${loginUrl}?response_type=token&client_id=${clientId}&redirect_uri=${redirectUri}`;
       
       // Open Salesforce login window
       window.location.href = url;
