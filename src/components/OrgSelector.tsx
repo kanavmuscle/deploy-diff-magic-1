@@ -19,11 +19,25 @@ export const OrgSelector = ({ type, onConnect, onDisconnect }: OrgSelectorProps)
     const storedResponse = sessionStorage.getItem(`oauth_response_${type}`);
     if (storedResponse) {
       const { accessToken, instanceUrl } = JSON.parse(storedResponse);
+      // Store in localStorage for persistence
+      localStorage.setItem(`org_${type}`, JSON.stringify({
+        url: accessToken,
+        instanceUrl
+      }));
       onConnect({ url: accessToken, instanceUrl });
       setIsConnected(true);
       setOrgUrl(instanceUrl);
-      // Clear the stored response
+      // Clear the temporary session storage
       sessionStorage.removeItem(`oauth_response_${type}`);
+    } else {
+      // Check localStorage for existing connection
+      const persistedData = localStorage.getItem(`org_${type}`);
+      if (persistedData) {
+        const data = JSON.parse(persistedData);
+        onConnect(data);
+        setIsConnected(true);
+        setOrgUrl(data.instanceUrl);
+      }
     }
   }, [onConnect, type]);
 
@@ -48,6 +62,7 @@ export const OrgSelector = ({ type, onConnect, onDisconnect }: OrgSelectorProps)
   };
 
   const handleDisconnect = () => {
+    localStorage.removeItem(`org_${type}`);
     setIsConnected(false);
     setOrgUrl("");
     onDisconnect();

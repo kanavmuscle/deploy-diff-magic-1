@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { OrgSelector } from "@/components/OrgSelector";
 import { MetadataFilter } from "@/components/MetadataFilter";
 import { DiffViewer } from "@/components/DiffViewer";
@@ -17,6 +17,19 @@ const Index = () => {
   const [isDeploying, setIsDeploying] = useState(false);
   const [isComparing, setIsComparing] = useState(false);
   const { toast } = useToast();
+
+  useEffect(() => {
+    // Load persisted connections on mount
+    const sourceData = localStorage.getItem('org_source');
+    const targetData = localStorage.getItem('org_target');
+
+    if (sourceData) {
+      setSourceOrg(JSON.parse(sourceData));
+    }
+    if (targetData) {
+      setTargetOrg(JSON.parse(targetData));
+    }
+  }, []);
 
   const handleTypeSelect = (type: string) => {
     if (selectedTypes.includes(type)) {
@@ -72,12 +85,14 @@ const Index = () => {
   };
 
   const handleSourceDisconnect = () => {
+    localStorage.removeItem('org_source');
     setSourceOrg(null);
     setSelectedTypes([]);
     setDifferences([]);
   };
 
   const handleTargetDisconnect = () => {
+    localStorage.removeItem('org_target');
     setTargetOrg(null);
     setSelectedTypes([]);
     setDifferences([]);
