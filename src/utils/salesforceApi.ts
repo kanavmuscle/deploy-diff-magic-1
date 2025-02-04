@@ -26,27 +26,46 @@ export const fetchMetadataDetails = async (
   }));
 
   const batches = splitInBatches(subRequests, BATCH_SIZE);
-  const compositeEndpoint = `${org.instanceUrl}/services/data/v57.0/composite`;
+  const compositeEndpoint = `${org.instanceUrl}/services/data/v57.0/tooling/composite`;
 
-  const compositePromises = batches.map(async (batch) => {
+  console.log(`Fetching metadata details for ${type}:`);
+  console.log(`Total records: ${records.length}`);
+  console.log(`Number of batches: ${batches.length}`);
+  console.log('Using composite endpoint:', compositeEndpoint);
+
+  const compositePromises = batches.map(async (batch, batchIndex) => {
+    const compositeRequest = {
+      compositeRequest: batch,
+    };
+
+    console.log(`Sending batch ${batchIndex + 1}/${batches.length}:`);
+    console.log('Composite Request Payload:', JSON.stringify(compositeRequest, null, 2));
+
     const response = await fetch(compositeEndpoint, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${org.url}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ compositeRequest: batch }),
+      body: JSON.stringify(compositeRequest),
     });
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error("Error response from Salesforce:", errorText);
+      console.error(`Error response from Salesforce for batch ${batchIndex + 1}:`, errorText);
       throw new Error(`Failed to fetch metadata details: ${response.status} ${response.statusText}`);
     }
 
-    return response.json();
+    const json = await response.json();
+    console.log(`Response for batch ${batchIndex + 1}:`, json);
+    return json;
   });
 
   const results = await Promise.all(compositePromises);
-  return results.flatMap((result) => result.compositeResponse.map((r: any) => r.body));
+  const allMetadata = results.flatMap((result) => 
+    result.compositeResponse.map((r: any) => r.body)
+  );
+
+  console.log(`Successfully fetched ${allMetadata.length} ${type} metadata records`);
+  return allMetadata;
 };
