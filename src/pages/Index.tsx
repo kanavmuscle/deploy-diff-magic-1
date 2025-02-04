@@ -1,18 +1,20 @@
 import { useState, useEffect } from "react";
 import { OrgSelector } from "@/components/OrgSelector";
 import { MetadataFilter } from "@/components/MetadataFilter";
-import { DiffViewer } from "@/components/DiffViewer";
+import { CompareResults } from "@/components/CompareResults";
 import { DeploymentPanel } from "@/components/DeploymentPanel";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { ArrowLeftRight } from "lucide-react";
 import { fetchMetadataDetails } from "@/utils/salesforceApi";
+import { compareMetadata } from "@/utils/metadataCompare";
+import { CompareResult } from "@/types/metadata";
 
 const Index = () => {
   const [sourceOrg, setSourceOrg] = useState<{ url: string; instanceUrl: string } | null>(null);
   const [targetOrg, setTargetOrg] = useState<{ url: string; instanceUrl: string } | null>(null);
   const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
-  const [differences, setDifferences] = useState<any[]>([]);
+  const [compareResults, setCompareResults] = useState<CompareResult | null>(null);
   const [isDeploying, setIsDeploying] = useState(false);
   const [isComparing, setIsComparing] = useState(false);
   const { toast } = useToast();
@@ -50,30 +52,6 @@ const Index = () => {
     }
   };
 
-  const getItemName = (item: any, type: string) => {
-    switch (type) {
-      case 'CustomField':
-        return item.DeveloperName;
-      case 'CustomObject':
-        return item.DeveloperName;
-      default:
-        return item.Name;
-    }
-  };
-
-  const getItemBody = (item: any, type: string) => {
-    switch (type) {
-      case 'CustomField':
-        return JSON.stringify(item.Metadata, null, 2);
-      case 'CustomObject':
-        return JSON.stringify(item.Metadata, null, 2);
-      case 'ApexClass':
-        return item.Body;
-      default:
-        return item.Body;
-    }
-  };
-
   const fetchMetadata = async (org: { url: string; instanceUrl: string }, type: string) => {
     console.log(`Fetching metadata for type ${type} from org ${org.instanceUrl}`);
     try {
@@ -107,82 +85,6 @@ const Index = () => {
     }
   };
 
-  const compareMetadata = (sourceItems: any[], targetItems: any[], type: string) => {
-    console.log('Comparing metadata items:', { sourceItems, targetItems });
-    const differences = [];
-
-    try {
-      for (const sourceItem of sourceItems) {
-        const sourceItemName = getItemName(sourceItem, type);
-        const targetItem = targetItems.find(item => getItemName(item, type) === sourceItemName);
-        const sourceItemBody = getItemBody(sourceItem, type);
-
-        if (!targetItem) {
-          console.log(`Item ${sourceItemName} exists in source but not in target`);
-          differences.push({
-            type: sourceItem.attributes?.type || type,
-            name: sourceItemName,
-            changes: [{
-              line: 1,
-              source: sourceItemBody || 'Present in source',
-              target: 'Not present in target'
-            }]
-          });
-          continue;
-        }
-
-        const targetItemBody = getItemBody(targetItem, type);
-        if (sourceItemBody !== targetItemBody) {
-          console.log(`Found differences in ${sourceItemName}`);
-          const sourceLines = (sourceItemBody || '').split('\n');
-          const targetLines = (targetItemBody || '').split('\n');
-          const changes = [];
-
-          for (let i = 0; i < Math.max(sourceLines.length, targetLines.length); i++) {
-            if (sourceLines[i] !== targetLines[i]) {
-              changes.push({
-                line: i + 1,
-                source: sourceLines[i] || '(empty)',
-                target: targetLines[i] || '(empty)'
-              });
-            }
-          }
-
-          if (changes.length > 0) {
-            differences.push({
-              type: sourceItem.attributes?.type || type,
-              name: sourceItemName,
-              changes
-            });
-          }
-        }
-      }
-
-      for (const targetItem of targetItems) {
-        const targetItemName = getItemName(targetItem, type);
-        const sourceItem = sourceItems.find(item => getItemName(item, type) === targetItemName);
-        if (!sourceItem) {
-          console.log(`Item ${targetItemName} exists in target but not in source`);
-          differences.push({
-            type: targetItem.attributes?.type || type,
-            name: targetItemName,
-            changes: [{
-              line: 1,
-              source: 'Not present in source',
-              target: getItemBody(targetItem, type) || 'Present in target'
-            }]
-          });
-        }
-      }
-
-      console.log('Comparison complete. Found differences:', differences);
-      return differences;
-    } catch (error) {
-      console.error('Error during comparison:', error);
-      throw error;
-    }
-  };
-
   const handleCompare = async () => {
     if (!sourceOrg || !targetOrg) {
       toast({
@@ -203,25 +105,38 @@ const Index = () => {
     }
 
     setIsComparing(true);
-    setDifferences([]);
+    setCompareResults(null);
 
     try {
       console.log('Starting comparison for types:', selectedTypes);
-      const allDifferences = [];
+      let allResults: CompareResult = {
+        noChange: [],
+        new: [],
+        deleted: [],
+        changed: []
+      };
 
       for (const type of selectedTypes) {
         console.log(`Processing metadata type: ${type}`);
         const sourceItems = await fetchMetadata(sourceOrg, type);
         const targetItems = await fetchMetadata(targetOrg, type);
-        const typeDifferences = compareMetadata(sourceItems, targetItems, type);
-        allDifferences.push(...typeDifferences);
+        const typeResults = compareMetadata(sourceItems, targetItems, type);
+        
+        // Merge results
+        allResults = {
+          noChange: [...allResults.noChange, ...typeResults.noChange],
+          new: [...allResults.new, ...typeResults.new],
+          deleted: [...allResults.deleted, ...typeResults.deleted],
+          changed: [...allResults.changed, ...typeResults.changed]
+        };
       }
 
-      setDifferences(allDifferences);
+      setCompareResults(allResults);
       
+      const totalDiffs = allResults.new.length + allResults.deleted.length + allResults.changed.length;
       toast({
         title: "Comparison Complete",
-        description: `Found ${allDifferences.length} differences across ${selectedTypes.length} metadata types.`,
+        description: `Found ${totalDiffs} differences across ${selectedTypes.length} metadata types.`,
       });
     } catch (error) {
       console.error('Comparison error:', error);
@@ -250,14 +165,14 @@ const Index = () => {
     localStorage.removeItem('org_source');
     setSourceOrg(null);
     setSelectedTypes([]);
-    setDifferences([]);
+    setCompareResults(null);
   };
 
   const handleTargetDisconnect = () => {
     localStorage.removeItem('org_target');
     setTargetOrg(null);
     setSelectedTypes([]);
-    setDifferences([]);
+    setCompareResults(null);
   };
 
   return (
@@ -299,7 +214,7 @@ const Index = () => {
             />
           </div>
           <div className="col-span-9 space-y-8">
-            <DiffViewer differences={differences} />
+            <CompareResults results={compareResults} />
             <DeploymentPanel
               selectedItems={selectedTypes}
               onDeploy={handleDeploy}
