@@ -6,6 +6,7 @@ import { DeploymentPanel } from "@/components/DeploymentPanel";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { ArrowLeftRight } from "lucide-react";
+import { fetchMetadataDetails } from "@/utils/salesforceApi";
 
 const Index = () => {
   const [sourceOrg, setSourceOrg] = useState<{ url: string; instanceUrl: string } | null>(null);
@@ -39,48 +40,30 @@ const Index = () => {
   const getQueryForType = (type: string) => {
     switch (type) {
       case 'CustomField':
-        return "SELECT Id,DeveloperName,Metadata FROM CustomField";
+        return "SELECT Id FROM CustomField";
       case 'CustomObject':
-        return "SELECT Id,DeveloperName,Body FROM CustomObject";
+        return "SELECT Id FROM CustomObject";
       case 'ApexClass':
-        return "SELECT Id,Name,Body FROM ApexClass";
+        return "SELECT Id FROM ApexClass";
       default:
-        return `SELECT Id,Name,Body FROM ${type}`;
-    }
-  };
-
-  const getItemName = (item: any, type: string) => {
-    switch (type) {
-      case 'CustomField':
-        return item.DeveloperName;
-      case 'CustomObject':
-        return item.DeveloperName;
-      default:
-        return item.Name;
-    }
-  };
-
-  const getItemBody = (item: any, type: string) => {
-    switch (type) {
-      case 'CustomField':
-        return JSON.stringify(item.Metadata, null, 2);
-      default:
-        return item.Body;
+        return `SELECT Id FROM ${type}`;
     }
   };
 
   const fetchMetadata = async (org: { url: string; instanceUrl: string }, type: string) => {
     console.log(`Fetching metadata for type ${type} from org ${org.instanceUrl}`);
     try {
+      // First, fetch the IDs
       const query = getQueryForType(type);
-      const response = await fetch(`${org.instanceUrl}/services/data/v57.0/tooling/query?q=${encodeURIComponent(query)}`, {
-        headers: {
-          'Authorization': `Bearer ${org.url}`,
-          'Content-Type': 'application/json',
-          'X-Prettyprint': '1'
-        },
-        mode: 'cors'
-      });
+      const response = await fetch(
+        `${org.instanceUrl}/services/data/v57.0/tooling/query?q=${encodeURIComponent(query)}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${org.url}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
 
       if (!response.ok) {
         const errorText = await response.text();
@@ -89,8 +72,13 @@ const Index = () => {
       }
 
       const data = await response.json();
-      console.log(`Received metadata for ${type}:`, data);
-      return data.records;
+      console.log(`Received metadata IDs for ${type}:`, data);
+
+      // Then, fetch the full metadata details using the composite API
+      const detailedRecords = await fetchMetadataDetails(org, data.records, type);
+      console.log(`Received detailed metadata for ${type}:`, detailedRecords);
+      
+      return detailedRecords;
     } catch (error) {
       console.error(`Error fetching ${type} metadata:`, error);
       throw error;
