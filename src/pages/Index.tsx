@@ -50,10 +50,33 @@ const Index = () => {
     }
   };
 
+  const getItemName = (item: any, type: string) => {
+    switch (type) {
+      case 'CustomField':
+        return item.DeveloperName;
+      case 'CustomObject':
+        return item.DeveloperName;
+      default:
+        return item.Name;
+    }
+  };
+
+  const getItemBody = (item: any, type: string) => {
+    switch (type) {
+      case 'CustomField':
+        return JSON.stringify(item.Metadata, null, 2);
+      case 'CustomObject':
+        return JSON.stringify(item.Metadata, null, 2);
+      case 'ApexClass':
+        return item.Body;
+      default:
+        return item.Body;
+    }
+  };
+
   const fetchMetadata = async (org: { url: string; instanceUrl: string }, type: string) => {
     console.log(`Fetching metadata for type ${type} from org ${org.instanceUrl}`);
     try {
-      // First, fetch the IDs
       const query = getQueryForType(type);
       const response = await fetch(
         `${org.instanceUrl}/services/data/v57.0/tooling/query?q=${encodeURIComponent(query)}`,
@@ -74,7 +97,6 @@ const Index = () => {
       const data = await response.json();
       console.log(`Received metadata IDs for ${type}:`, data);
 
-      // Then, fetch the full metadata details using the composite API
       const detailedRecords = await fetchMetadataDetails(org, data.records, type);
       console.log(`Received detailed metadata for ${type}:`, detailedRecords);
       
