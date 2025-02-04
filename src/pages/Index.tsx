@@ -37,10 +37,44 @@ const Index = () => {
     }
   };
 
+  const getQueryForType = (type: string) => {
+    switch (type) {
+      case 'CustomField':
+        return "SELECT Id,DeveloperName,Metadata FROM CustomField";
+      case 'CustomObject':
+        return "SELECT Id,DeveloperName,Body FROM CustomObject";
+      case 'ApexClass':
+        return "SELECT Id,Name,Body FROM ApexClass";
+      default:
+        return `SELECT Id,Name,Body FROM ${type}`;
+    }
+  };
+
+  const getItemName = (item: any, type: string) => {
+    switch (type) {
+      case 'CustomField':
+        return item.DeveloperName;
+      case 'CustomObject':
+        return item.DeveloperName;
+      default:
+        return item.Name;
+    }
+  };
+
+  const getItemBody = (item: any, type: string) => {
+    switch (type) {
+      case 'CustomField':
+        return JSON.stringify(item.Metadata, null, 2);
+      default:
+        return item.Body;
+    }
+  };
+
   const fetchMetadata = async (org: { url: string; instanceUrl: string }, type: string) => {
     console.log(`Fetching metadata for type ${type} from org ${org.instanceUrl}`);
     try {
-      const response = await fetch(`${org.instanceUrl}/services/data/v57.0/tooling/query?q=SELECT+Id,Name,Body+FROM+${type}`, {
+      const query = getQueryForType(type);
+      const response = await fetch(`${org.instanceUrl}/services/data/v57.0/tooling/query?q=${encodeURIComponent(query)}`, {
         headers: {
           'Authorization': `Bearer ${org.url}`,
           'Content-Type': 'application/json',
@@ -64,32 +98,35 @@ const Index = () => {
     }
   };
 
-  const compareMetadata = (sourceItems: any[], targetItems: any[]) => {
+  const compareMetadata = (sourceItems: any[], targetItems: any[], type: string) => {
     console.log('Comparing metadata items:', { sourceItems, targetItems });
     const differences = [];
 
     try {
       for (const sourceItem of sourceItems) {
-        const targetItem = targetItems.find(item => item.Name === sourceItem.Name);
+        const sourceItemName = getItemName(sourceItem, type);
+        const targetItem = targetItems.find(item => getItemName(item, type) === sourceItemName);
+        const sourceItemBody = getItemBody(sourceItem, type);
 
         if (!targetItem) {
-          console.log(`Item ${sourceItem.Name} exists in source but not in target`);
+          console.log(`Item ${sourceItemName} exists in source but not in target`);
           differences.push({
-            type: sourceItem.attributes?.type || 'Unknown',
-            name: sourceItem.Name,
+            type: sourceItem.attributes?.type || type,
+            name: sourceItemName,
             changes: [{
               line: 1,
-              source: sourceItem.Body || 'Present in source',
+              source: sourceItemBody || 'Present in source',
               target: 'Not present in target'
             }]
           });
           continue;
         }
 
-        if (sourceItem.Body !== targetItem.Body) {
-          console.log(`Found differences in ${sourceItem.Name}`);
-          const sourceLines = (sourceItem.Body || '').split('\n');
-          const targetLines = (targetItem.Body || '').split('\n');
+        const targetItemBody = getItemBody(targetItem, type);
+        if (sourceItemBody !== targetItemBody) {
+          console.log(`Found differences in ${sourceItemName}`);
+          const sourceLines = (sourceItemBody || '').split('\n');
+          const targetLines = (targetItemBody || '').split('\n');
           const changes = [];
 
           for (let i = 0; i < Math.max(sourceLines.length, targetLines.length); i++) {
@@ -104,8 +141,8 @@ const Index = () => {
 
           if (changes.length > 0) {
             differences.push({
-              type: sourceItem.attributes?.type || 'Unknown',
-              name: sourceItem.Name,
+              type: sourceItem.attributes?.type || type,
+              name: sourceItemName,
               changes
             });
           }
@@ -114,16 +151,17 @@ const Index = () => {
 
       // Check for items that exist only in target
       for (const targetItem of targetItems) {
-        const sourceItem = sourceItems.find(item => item.Name === targetItem.Name);
+        const targetItemName = getItemName(targetItem, type);
+        const sourceItem = sourceItems.find(item => getItemName(item, type) === targetItemName);
         if (!sourceItem) {
-          console.log(`Item ${targetItem.Name} exists in target but not in source`);
+          console.log(`Item ${targetItemName} exists in target but not in source`);
           differences.push({
-            type: targetItem.attributes?.type || 'Unknown',
-            name: targetItem.Name,
+            type: targetItem.attributes?.type || type,
+            name: targetItemName,
             changes: [{
               line: 1,
               source: 'Not present in source',
-              target: targetItem.Body || 'Present in target'
+              target: getItemBody(targetItem, type) || 'Present in target'
             }]
           });
         }
