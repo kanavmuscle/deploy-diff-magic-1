@@ -18,19 +18,50 @@ const computeDiff = (source: string, target: string): MetadataDiff[] => {
   return differences;
 };
 
+const getItemName = (item: any, type: string): string => {
+  switch (type) {
+    case 'CustomField':
+      return item.DeveloperName || item.FullName || '';
+    case 'CustomObject':
+      return item.DeveloperName || item.FullName || '';
+    default:
+      return item.Name || '';
+  }
+};
+
+const getItemBody = (item: any, type: string): string => {
+  switch (type) {
+    case 'CustomField':
+    case 'CustomObject':
+      return JSON.stringify(item.Metadata || {}, null, 2);
+    case 'ApexClass':
+      return item.Body || '';
+    default:
+      return JSON.stringify(item || {}, null, 2);
+  }
+};
+
 export const compareMetadata = (sourceItems: any[], targetItems: any[], type: string): CompareResult => {
+  console.log(`Comparing ${sourceItems.length} source items with ${targetItems.length} target items for type ${type}`);
+  
   const sourceMap = new Map();
   const targetMap = new Map();
 
   // Create maps for faster lookup
   sourceItems.forEach(item => {
     const name = getItemName(item, type);
-    sourceMap.set(name, item);
+    if (name) {
+      sourceMap.set(name, item);
+      console.log(`Source item: ${name}`);
+    }
   });
 
   targetItems.forEach(item => {
     const name = getItemName(item, type);
-    targetMap.set(name, item);
+    if (name) {
+      targetMap.set(name, item);
+      console.log(`Target item: ${name}`);
+    }
   });
 
   const result: CompareResult = {
@@ -46,6 +77,7 @@ export const compareMetadata = (sourceItems: any[], targetItems: any[], type: st
     
     if (!targetItem) {
       // Item exists only in source
+      console.log(`New item found: ${name}`);
       result.new.push({
         id: sourceItem.Id,
         name,
@@ -66,6 +98,7 @@ export const compareMetadata = (sourceItems: any[], targetItems: any[], type: st
         });
       } else {
         // Changed items
+        console.log(`Changed item found: ${name}`);
         result.changed.push({
           id: sourceItem.Id,
           name,
@@ -81,6 +114,7 @@ export const compareMetadata = (sourceItems: any[], targetItems: any[], type: st
   // Check for deleted items
   targetMap.forEach((targetItem, name) => {
     if (!sourceMap.has(name)) {
+      console.log(`Deleted item found: ${name}`);
       result.deleted.push({
         id: targetItem.Id,
         name,
@@ -90,27 +124,12 @@ export const compareMetadata = (sourceItems: any[], targetItems: any[], type: st
     }
   });
 
+  console.log('Comparison results:', {
+    noChangeCount: result.noChange.length,
+    newCount: result.new.length,
+    deletedCount: result.deleted.length,
+    changedCount: result.changed.length
+  });
+
   return result;
-};
-
-const getItemName = (item: any, type: string): string => {
-  switch (type) {
-    case 'CustomField':
-    case 'CustomObject':
-      return item.DeveloperName || '';
-    default:
-      return item.Name || '';
-  }
-};
-
-const getItemBody = (item: any, type: string): string => {
-  switch (type) {
-    case 'CustomField':
-    case 'CustomObject':
-      return JSON.stringify(item.Metadata || {}, null, 2);
-    case 'ApexClass':
-      return item.Body || '';
-    default:
-      return item.Body || '';
-  }
 };
