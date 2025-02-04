@@ -17,7 +17,6 @@ const Index = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    // Load persisted connections on mount
     const sourceData = localStorage.getItem('org_source');
     const targetData = localStorage.getItem('org_target');
 
@@ -149,7 +148,6 @@ const Index = () => {
         }
       }
 
-      // Check for items that exist only in target
       for (const targetItem of targetItems) {
         const targetItemName = getItemName(targetItem, type);
         const sourceItem = sourceItems.find(item => getItemName(item, type) === targetItemName);
@@ -205,7 +203,7 @@ const Index = () => {
         console.log(`Processing metadata type: ${type}`);
         const sourceItems = await fetchMetadata(sourceOrg, type);
         const targetItems = await fetchMetadata(targetOrg, type);
-        const typeDifferences = compareMetadata(sourceItems, targetItems);
+        const typeDifferences = compareMetadata(sourceItems, targetItems, type);
         allDifferences.push(...typeDifferences);
       }
 
